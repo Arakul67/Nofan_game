@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NoFan Game - Тест реакции</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .title {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .score-display {
+            background: rgba(255,255,255,0.2);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .score {
+            font-size: 3em;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .score-label {
+            font-size: 1.1em;
+            margin-top: 5px;
+            opacity: 0.8;
+        }
+
+        .game-button {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: none;
+            font-size: 2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, #FF6B6B, #FF8E53);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+
+        .game-button:active {
+            transform: scale(0.95);
+        }
+
+        .game-button.clicked {
+            animation: pulse 0.3s ease;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .timer {
+            font-size: 1.5em;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        .controls {
+            margin-top: 30px;
+        }
+
+        .control-btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .control-btn:hover {
+            background: rgba(255,255,255,0.3);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        .stats {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .stat-item {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #FFD700;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .game-over {
+            background: rgba(0,0,0,0.8);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .game-over-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 350px;
+            width: 90%;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="title">🎯 NoFan Game</h1>
+        <p class="subtitle">Тест реакции и скорости</p>
+        
+        <div class="score-display">
+            <div class="score" id="score">0</div>
+            <div class="score-label">очков</div>
+        </div>
+
+        <div class="timer" id="timer">Время: 30с</div>
+
+        <button class="game-button" id="gameButton" onclick="clickButton()">
+            🚀 НАЖМИ!
+        </button>
+
+        <div class="controls">
+            <button class="control-btn" onclick="startGame()">▶️ Старт</button>
+            <button class="control-btn" onclick="resetGame()">🔄 Сброс</button>
+            <button class="control-btn" onclick="sendScore()">📤 Отправить</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="clicksPerSecond">0</div>
+                <div class="stat-label">кликов/сек</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalClicks">0</div>
+                <div class="stat-label">всего кликов</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h2>🎉 Игра окончена!</h2>
+            <p>Ваш результат:</p>
+            <div class="score" id="finalScore">0</div>
+            <p>очков</p>
+            <button class="control-btn" onclick="closeGameOver()">Закрыть</button>
+        </div>
+    </div>
+
+    <script>
+        let score = 0;
+        let timeLeft = 30;
+        let gameActive = false;
+        let gameTimer;
+        let totalClicks = 0;
+        let gameStartTime;
+
+        function updateDisplay() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('timer').textContent = `Время: ${timeLeft}с`;
+            document.getElementById('totalClicks').textContent = totalClicks;
+            
+            if (gameActive && gameStartTime) {
+                const elapsed = (Date.now() - gameStartTime) / 1000;
+                const cps = elapsed > 0 ? (totalClicks / elapsed).toFixed(1) : 0;
+                document.getElementById('clicksPerSecond').textContent = cps;
+            }
+        }
+
+        function clickButton() {
+            if (!gameActive) return;
+            
+            score += 10;
+            totalClicks++;
+            
+            // Анимация кнопки
+            const button = document.getElementById('gameButton');
+            button.classList.add('clicked');
+            setTimeout(() => button.classList.remove('clicked'), 300);
+            
+            // Случайное изменение цвета кнопки
+            const colors = [
+                'linear-gradient(45deg, #FF6B6B, #FF8E53)',
+                'linear-gradient(45deg, #4ECDC4, #44A08D)',
+                'linear-gradient(45deg, #A8E6CF, #7FCDCD)',
+                'linear-gradient(45deg, #FFD93D, #FF6B6B)',
+                'linear-gradient(45deg, #6C5CE7, #A29BFE)'
+            ];
+            button.style.background = colors[Math.floor(Math.random() * colors.length)];
+            
+            updateDisplay();
+        }
+
+        function startGame() {
+            if (gameActive) return;
+            
+            gameActive = true;
+            gameStartTime = Date.now();
+            timeLeft = 30;
+            score = 0;
+            totalClicks = 0;
+            
+            document.getElementById('gameButton').style.background = 'linear-gradient(45deg, #FF6B6B, #FF8E53)';
+            
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                updateDisplay();
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+            
+            updateDisplay();
+        }
+
+        function endGame() {
+            gameActive = false;
+            clearInterval(gameTimer);
+            
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('gameOver').style.display = 'flex';
+            
+            // Автоматически отправляем результат в Telegram
+            if (window.Telegram?.WebApp) {
+                Telegram.WebApp.sendData(JSON.stringify({
+                    score: score,
+                    clicks: totalClicks,
+                    game: 'nofan_reaction_test'
+                }));
+            }
+        }
+
+        function resetGame() {
+            gameActive = false;
+            clearInterval(gameTimer);
+            score = 0;
+            timeLeft = 30;
+            totalClicks = 0;
+            gameStartTime = null;
+            updateDisplay();
+            document.getElementById('gameButton').style.background = 'linear-gradient(45deg, #FF6B6B, #FF8E53)';
+        }
+
+        function closeGameOver() {
+            document.getElementById('gameOver').style.display = 'none';
+        }
+
+        function sendScore() {
+            if (window.Telegram?.WebApp) {
+                Telegram.WebApp.sendData(JSON.stringify({
+                    score: score,
+                    clicks: totalClicks,
+                    game: 'nofan_reaction_test'
+                }));
+            } else {
+                alert(`Ваш результат: ${score} очков!`);
+            }
+        }
+
+        // Инициализация Telegram Web App
+        if (window.Telegram?.WebApp) {
+            Telegram.WebApp.ready();
+            Telegram.WebApp.expand();
+        }
+
+        // Инициализация
+        updateDisplay();
+    </script>
+</body>
+</html>
